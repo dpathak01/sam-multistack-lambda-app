@@ -1,0 +1,148 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Cart domain service stack.
+
+Parameters:
+  SharedRestApiId:
+    Type: String
+  SharedRestApiRootResourceId:
+    Type: String
+  ApiStageName:
+    Type: String
+    Default: prod
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 10
+    MemorySize: 256
+    Handler: index.handler
+    Layers:
+      - !Ref SharedCommonLayer
+    Environment:
+      Variables:
+        LOG_LEVEL: INFO
+
+Resources:
+  SharedCommonLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: cart-service-common
+      ContentUri: ../../shared/layers/common
+      CompatibleRuntimes:
+        - nodejs20.x
+      RetentionPolicy: Delete
+
+  CartsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+
+  UpsertCartFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/upsert-cart.handler
+      Description: Creates or updates a cart.
+      Environment:
+        Variables:
+          SERVICE_NAME: cart-service
+          TABLE_NAME: !Ref CartsTable
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+              Resource: !GetAtt CartsTable.Arn
+
+  GetCartFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/get-cart.handler
+      Description: Returns a single cart by userId.
+      Environment:
+        Variables:
+          SERVICE_NAME: cart-service
+          TABLE_NAME: !Ref CartsTable
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+              Resource: !GetAtt CartsTable.Arn
+
+  CartResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref SharedRestApiId
+      ParentId: !Ref SharedRestApiRootResourceId
+      PathPart: cart
+
+  UpsertCartMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref SharedRestApiId
+      ResourceId: !Ref CartResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub >-
+          arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpsertCartFunction.Arn}/invocations
+
+  GetCartMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref SharedRestApiId
+      ResourceId: !Ref CartResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub >-
+          arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetCartFunction.Arn}/invocations
+
+  UpsertCartPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref UpsertCartFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${SharedRestApiId}/*/POST/cart
+
+  GetCartPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref GetCartFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${SharedRestApiId}/*/GET/cart
+
+  CartServiceDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - UpsertCartMethod
+      - GetCartMethod
+    Properties:
+      RestApiId: !Ref SharedRestApiId
+      StageName: !Ref ApiStageName
+      Description: Deployment triggered by the cart service stack.
+
+Outputs:
+  CartsTableName:
+    Value: !Ref CartsTable
+  CartPath:
+    Value: !Sub /${ApiStageName}/cart

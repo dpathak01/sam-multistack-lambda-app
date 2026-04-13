@@ -1,0 +1,95 @@
+[
+  {
+    "orderId": "order-4001",
+    "userId": "user-1001",
+    "status": "CREATED",
+    "items": [
+      {
+        "productId": "prod-2001",
+        "name": "Wireless Mouse",
+        "quantity": 1,
+        "unitPrice": 799
+      },
+      {
+        "productId": "prod-2004",
+        "name": "USB-C Hub",
+        "quantity": 1,
+        "unitPrice": 1899
+      }
+    ],
+    "totalAmount": 2698,
+    "createdAt": "2026-04-11T07:15:00.000Z"
+  },
+  {
+    "orderId": "order-4002",
+    "userId": "user-1002",
+    "status": "CONFIRMED",
+    "items": [
+      {
+        "productId": "prod-2002",
+        "name": "Mechanical Keyboard",
+        "quantity": 1,
+        "unitPrice": 2499
+      }
+    ],
+    "totalAmount": 2499,
+    "createdAt": "2026-04-11T08:10:00.000Z"
+  },
+  {
+    "orderId": "order-4003",
+    "userId": "user-1003",
+    "status": "SHIPPED",
+    "items": [
+      {
+        "productId": "prod-2003",
+        "name": "27-inch Monitor",
+        "quantity": 1,
+        "unitPrice": 15999
+      },
+      {
+        "productId": "prod-2001",
+        "name": "Wireless Mouse",
+        "quantity": 1,
+        "unitPrice": 799
+      }
+    ],
+    "totalAmount": 16798,
+    "createdAt": "2026-04-11T09:25:00.000Z"
+  },
+  {
+    "orderId": "order-4004",
+    "userId": "user-1004",
+    "status": "DELIVERED",
+    "items": [
+      {
+        "productId": "prod-2005",
+        "name": "Noise Cancelling Headphones",
+        "quantity": 1,
+        "unitPrice": 6999
+      }
+    ],
+    "totalAmount": 6999,
+    "createdAt": "2026-04-11T10:40:00.000Z"
+  },
+  {
+    "orderId": "order-4005",
+    "userId": "user-1005",
+    "status": "CANCELLED",
+    "items": [
+      {
+        "productId": "prod-2004",
+        "name": "USB-C Hub",
+        "quantity": 2,
+        "unitPrice": 1899
+      },
+      {
+        "productId": "prod-2002",
+        "name": "Mechanical Keyboard",
+        "quantity": 1,
+        "unitPrice": 2499
+      }
+    ],
+    "totalAmount": 6297,
+    "createdAt": "2026-04-11T11:30:00.000Z"
+  }
+]

@@ -1,0 +1,15 @@
+{
+  "name": "cart-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cart domain service for the modular SAM application.",
+  "main": "src/handlers/upsert-cart.js",
+  "scripts": {
+    "lint": "node -e \"console.log('Lint step ready for integration')\""
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.787.0",
+    "@aws-sdk/lib-dynamodb": "^3.787.0"
+  }
+}
+

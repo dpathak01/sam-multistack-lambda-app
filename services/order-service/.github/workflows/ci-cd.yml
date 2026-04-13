@@ -1,0 +1,11 @@
+name: Order Service Local Workflow Reference
+
+on:
+  workflow_call:
+
+jobs:
+  documentation-only:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Active workflow is defined at repository root: .github/workflows/order-service-ci-cd.yml"
+

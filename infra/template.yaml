@@ -1,0 +1,105 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Shared infrastructure stack for the modular serverless application.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: modular-commerce
+  ApiStageName:
+    Type: String
+    Default: prod
+
+Resources:
+  SharedApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub ${ProjectName}-shared-api
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+
+  SharedApiGatewayAccount:
+    Type: AWS::ApiGateway::Account
+    Properties:
+      CloudWatchRoleArn: !GetAtt ApiGatewayCloudWatchRole.Arn
+
+  ApiGatewayCloudWatchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+
+  HealthResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref SharedApiGateway
+      ParentId: !GetAtt SharedApiGateway.RootResourceId
+      PathPart: health
+
+  HealthGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref SharedApiGateway
+      ResourceId: !Ref HealthResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseTemplates:
+              application/json: '{"status":"ok","service":"shared-api"}'
+      MethodResponses:
+        - StatusCode: 200
+
+  SharedApiGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - SharedApiGatewayAccount
+      - HealthGetMethod
+    Properties:
+      RestApiId: !Ref SharedApiGateway
+      Description: Initial deployment for the shared API.
+
+  SharedApiGatewayStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      RestApiId: !Ref SharedApiGateway
+      DeploymentId: !Ref SharedApiGatewayDeployment
+      StageName: !Ref ApiStageName
+      MethodSettings:
+        - DataTraceEnabled: false
+          HttpMethod: '*'
+          LoggingLevel: INFO
+          MetricsEnabled: true
+          ResourcePath: /*
+
+Outputs:
+  SharedRestApiId:
+    Description: Shared API Gateway REST API ID.
+    Value: !Ref SharedApiGateway
+    Export:
+      Name: !Sub ${AWS::StackName}-SharedRestApiId
+  SharedRestApiRootResourceId:
+    Description: Root resource ID of the shared API Gateway.
+    Value: !GetAtt SharedApiGateway.RootResourceId
+    Export:
+      Name: !Sub ${AWS::StackName}-SharedRestApiRootResourceId
+  SharedApiInvokeUrl:
+    Description: Invoke URL for the shared API stage.
+    Value: !Sub https://${SharedApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${ApiStageName}
+  SharedApiStageName:
+    Description: Stage name used by the shared API.
+    Value: !Ref ApiStageName
+    Export:
+      Name: !Sub ${AWS::StackName}-SharedApiStageName

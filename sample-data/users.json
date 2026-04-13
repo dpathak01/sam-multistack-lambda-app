@@ -1,0 +1,47 @@
+[
+  {
+    "userId": "user-1001",
+    "firstName": "Aarav",
+    "lastName": "Sharma",
+    "email": "aarav.sharma@example.com",
+    "phone": "+91-9876500001",
+    "status": "ACTIVE",
+    "createdAt": "2026-04-01T09:00:00.000Z"
+  },
+  {
+    "userId": "user-1002",
+    "firstName": "Diya",
+    "lastName": "Patel",
+    "email": "diya.patel@example.com",
+    "phone": "+91-9876500002",
+    "status": "ACTIVE",
+    "createdAt": "2026-04-01T09:15:00.000Z"
+  },
+  {
+    "userId": "user-1003",
+    "firstName": "Vivaan",
+    "lastName": "Reddy",
+    "email": "vivaan.reddy@example.com",
+    "phone": "+91-9876500003",
+    "status": "ACTIVE",
+    "createdAt": "2026-04-01T09:30:00.000Z"
+  },
+  {
+    "userId": "user-1004",
+    "firstName": "Anaya",
+    "lastName": "Nair",
+    "email": "anaya.nair@example.com",
+    "phone": "+91-9876500004",
+    "status": "ACTIVE",
+    "createdAt": "2026-04-01T09:45:00.000Z"
+  },
+  {
+    "userId": "user-1005",
+    "firstName": "Kabir",
+    "lastName": "Mehta",
+    "email": "kabir.mehta@example.com",
+    "phone": "+91-9876500005",
+    "status": "INACTIVE",
+    "createdAt": "2026-04-01T10:00:00.000Z"
+  }
+]

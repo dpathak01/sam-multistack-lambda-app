@@ -1,0 +1,78 @@
+name: SAM Deploy
+description: Build and deploy an individual SAM service stack.
+
+inputs:
+  service-path:
+    description: Relative path to the service directory.
+    required: true
+  stack-name:
+    description: CloudFormation stack name.
+    required: true
+  infra-stack-name:
+    description: Shared infrastructure stack name.
+    required: true
+  aws-region:
+    description: AWS region for deployment.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: npm
+        cache-dependency-path: ${{ inputs.service-path }}/package-lock.json
+
+    - name: Setup AWS SAM
+      uses: aws-actions/setup-sam@v2
+
+    - name: Install dependencies
+      shell: bash
+      working-directory: ${{ inputs.service-path }}
+      run: npm install
+
+    - name: Resolve shared API outputs
+      id: infra
+      shell: bash
+      run: |
+        API_ID=$(aws cloudformation describe-stacks \
+          --stack-name "${{ inputs.infra-stack-name }}" \
+          --region "${{ inputs.aws-region }}" \
+          --query "Stacks[0].Outputs[?OutputKey=='SharedRestApiId'].OutputValue" \
+          --output text)
+        ROOT_ID=$(aws cloudformation describe-stacks \
+          --stack-name "${{ inputs.infra-stack-name }}" \
+          --region "${{ inputs.aws-region }}" \
+          --query "Stacks[0].Outputs[?OutputKey=='SharedRestApiRootResourceId'].OutputValue" \
+          --output text)
+        STAGE_NAME=$(aws cloudformation describe-stacks \
+          --stack-name "${{ inputs.infra-stack-name }}" \
+          --region "${{ inputs.aws-region }}" \
+          --query "Stacks[0].Outputs[?OutputKey=='SharedApiStageName'].OutputValue" \
+          --output text)
+
+        echo "shared_rest_api_id=${API_ID}" >> "${GITHUB_OUTPUT}"
+        echo "shared_rest_api_root_resource_id=${ROOT_ID}" >> "${GITHUB_OUTPUT}"
+        echo "api_stage_name=${STAGE_NAME}" >> "${GITHUB_OUTPUT}"
+
+    - name: Build stack
+      shell: bash
+      working-directory: ${{ inputs.service-path }}
+      run: sam build --template-file template.yaml
+
+    - name: Deploy stack
+      shell: bash
+      working-directory: ${{ inputs.service-path }}
+      run: >
+        sam deploy
+        --stack-name "${{ inputs.stack-name }}"
+        --region "${{ inputs.aws-region }}"
+        --resolve-s3
+        --capabilities CAPABILITY_IAM
+        --no-fail-on-empty-changeset
+        --parameter-overrides
+        SharedRestApiId="${{ steps.infra.outputs.shared_rest_api_id }}"
+        SharedRestApiRootResourceId="${{ steps.infra.outputs.shared_rest_api_root_resource_id }}"
+        ApiStageName="${{ steps.infra.outputs.api_stage_name }}"

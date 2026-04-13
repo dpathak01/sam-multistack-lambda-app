@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: User domain service stack.
+
+Parameters:
+  SharedRestApiId:
+    Type: String
+  SharedRestApiRootResourceId:
+    Type: String
+  ApiStageName:
+    Type: String
+    Default: prod
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 10
+    MemorySize: 256
+    Handler: index.handler
+    Layers:
+      - !Ref SharedCommonLayer
+    Environment:
+      Variables:
+        LOG_LEVEL: INFO
+
+Resources:
+  SharedCommonLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: user-service-common
+      ContentUri: ../../shared/layers/common
+      CompatibleRuntimes:
+        - nodejs20.x
+      RetentionPolicy: Delete
+
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+
+  GetUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/get-user.handler
+      Description: Retrieves a single user by id.
+      Environment:
+        Variables:
+          SERVICE_NAME: user-service
+          TABLE_NAME: !Ref UsersTable
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+              Resource: !GetAtt UsersTable.Arn
+
+  UserResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref SharedRestApiId
+      ParentId: !Ref SharedRestApiRootResourceId
+      PathPart: user
+
+  UserIdResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref SharedRestApiId
+      ParentId: !Ref UserResource
+      PathPart: '{id}'
+
+  GetUserMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref SharedRestApiId
+      ResourceId: !Ref UserIdResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      RequestParameters:
+        method.request.path.id: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub >-
+          arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetUserFunction.Arn}/invocations
+
+  GetUserPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref GetUserFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${SharedRestApiId}/*/GET/user/*
+
+  UserServiceDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - GetUserMethod
+    Properties:
+      RestApiId: !Ref SharedRestApiId
+      StageName: !Ref ApiStageName
+      Description: Deployment triggered by the user service stack.
+
+Outputs:
+  UsersTableName:
+    Value: !Ref UsersTable
+  UserPath:
+    Value: !Sub /${ApiStageName}/user/{id}
+

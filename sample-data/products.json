@@ -1,0 +1,47 @@
+[
+  {
+    "productId": "prod-2001",
+    "name": "Wireless Mouse",
+    "category": "Accessories",
+    "price": 799,
+    "currency": "INR",
+    "inventory": 120,
+    "status": "ACTIVE"
+  },
+  {
+    "productId": "prod-2002",
+    "name": "Mechanical Keyboard",
+    "category": "Accessories",
+    "price": 2499,
+    "currency": "INR",
+    "inventory": 80,
+    "status": "ACTIVE"
+  },
+  {
+    "productId": "prod-2003",
+    "name": "27-inch Monitor",
+    "category": "Displays",
+    "price": 15999,
+    "currency": "INR",
+    "inventory": 35,
+    "status": "ACTIVE"
+  },
+  {
+    "productId": "prod-2004",
+    "name": "USB-C Hub",
+    "category": "Accessories",
+    "price": 1899,
+    "currency": "INR",
+    "inventory": 60,
+    "status": "ACTIVE"
+  },
+  {
+    "productId": "prod-2005",
+    "name": "Noise Cancelling Headphones",
+    "category": "Audio",
+    "price": 6999,
+    "currency": "INR",
+    "inventory": 25,
+    "status": "ACTIVE"
+  }
+]

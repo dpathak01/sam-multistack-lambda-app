@@ -1,0 +1,13 @@
+.aws-sam/
+node_modules/
+coverage/
+.DS_Store
+*.log
+basic-details.txt
+*.env
+dist/
+build/
+*.zip
+*.tar.gz
+*.egg-info/
+__pycache__/
