@@ -38,11 +38,20 @@ Resources:
     Properties:
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
+        - AttributeName: cartId
+          AttributeType: S
         - AttributeName: userId
           AttributeType: S
       KeySchema:
-        - AttributeName: userId
+        - AttributeName: cartId
           KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: UserIdIndex
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
       SSESpecification:
         SSEEnabled: true
 
@@ -56,6 +65,7 @@ Resources:
         Variables:
           SERVICE_NAME: cart-service
           TABLE_NAME: !Ref CartsTable
+          USER_ID_INDEX_NAME: UserIdIndex
       Policies:
         - AWSLambdaBasicExecutionRole
         - Statement:
@@ -74,13 +84,14 @@ Resources:
         Variables:
           SERVICE_NAME: cart-service
           TABLE_NAME: !Ref CartsTable
+          USER_ID_INDEX_NAME: UserIdIndex
       Policies:
         - AWSLambdaBasicExecutionRole
         - Statement:
             - Effect: Allow
               Action:
-                - dynamodb:GetItem
-              Resource: !GetAtt CartsTable.Arn
+                - dynamodb:Query
+              Resource: !Sub arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${CartsTable}/index/UserIdIndex
 
   CartResource:
     Type: AWS::ApiGateway::Resource

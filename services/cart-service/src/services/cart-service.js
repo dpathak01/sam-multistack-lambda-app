@@ -1,7 +1,7 @@
 'use strict';
 
 const crypto = require('node:crypto');
-const { GetCommand, PutCommand } = require('@aws-sdk/lib-dynamodb');
+const { PutCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
 const { NotFoundError, ValidationError } = require('/opt/nodejs/shared/errors');
 const { documentClient } = require('../lib/dynamo-client');
 
@@ -38,17 +38,24 @@ class CartService {
     }
 
     const result = await documentClient.send(
-      new GetCommand({
+      new QueryCommand({
         TableName: this.tableName,
-        Key: { userId }
+        IndexName: process.env.USER_ID_INDEX_NAME,
+        KeyConditionExpression: 'userId = :userId',
+        ExpressionAttributeValues: {
+          ':userId': userId
+        },
+        Limit: 1
       })
     );
 
-    if (!result.Item) {
+    const [cart] = result.Items || [];
+
+    if (!cart) {
       throw new NotFoundError(`Cart for user ${userId} was not found.`);
     }
 
-    return result.Item;
+    return cart;
   }
 }
 
