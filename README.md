@@ -1,4 +1,4 @@
-# Modular Serverless Commerce Platform
+## Modular Serverless Commerce Platform
 
 This repository implements a production-ready modular serverless architecture with AWS SAM, API Gateway, Lambda, DynamoDB, and GitHub Actions. Each business domain is isolated into its own deployment unit so teams can ship changes independently while still sharing a single API Gateway entry point.
 
